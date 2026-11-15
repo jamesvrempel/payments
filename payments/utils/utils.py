@@ -144,7 +144,7 @@ def make_custom_fields():
 
 		frappe.clear_cache(doctype="Web Form")
 
-	if "erpnext" in frappe.get_installed_apps():
+	if "es_erp" in frappe.get_installed_apps():
 		custom_fields = {
 			"GoCardless Mandate": [
 				{

@@ -33,7 +33,7 @@ class MpesaSettings(Document):
 	def on_update(self):
 		from payments.utils import create_payment_gateway
 
-		if "erpnext" in frappe.get_installed_apps():
+		if "es_erp" in frappe.get_installed_apps():
 			create_custom_pos_fields()
 
 		create_payment_gateway(
@@ -366,7 +366,7 @@ def fetch_param_value(response, key, key_field):
 
 def create_mode_of_payment(gateway, payment_type="General"):
 	with erpnext_app_import_guard():
-		from erpnext import get_default_company
+		from es_erp import get_default_company
 
 	payment_gateway_account = frappe.db.get_value(
 		"Payment Gateway Account", {"payment_gateway": gateway}, ["payment_account"]
