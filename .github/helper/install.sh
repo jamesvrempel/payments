@@ -10,10 +10,13 @@ sudo apt install libcups2-dev redis-server mariadb-client
 
 pip install frappe-bench
 
-githubbranch=${GITHUB_BASE_REF:-${GITHUB_REF##*/}}
+# This fork runs on the ES ERP stack, not upstream ERPNext, so the branch being
+# tested (main) has no counterpart in frappe/frappe. Each dependency is pinned
+# to its own branch here; override through the environment when needed.
 frappeuser=${FRAPPE_USER:-"frappe"}
-frappebranch=${FRAPPE_BRANCH:-$githubbranch}
-erpnextbranch=${ERPNEXT_BRANCH:-$githubbranch}
+frappebranch=${FRAPPE_BRANCH:-"version-15"}
+es_erp_repo=${ES_ERP_REPO:-"https://github.com/jamesvrempel/es_erp"}
+es_erp_branch=${ES_ERP_BRANCH:-"main"}
 
 git clone "https://github.com/${frappeuser}/frappe" --branch "${frappebranch}" --depth 1
 bench init --skip-assets --frappe-path ~/frappe --python "$(which python)" frappe-bench
@@ -21,6 +24,9 @@ bench init --skip-assets --frappe-path ~/frappe --python "$(which python)" frapp
 mkdir ~/frappe-bench/sites/test_site
 cp -r "${GITHUB_WORKSPACE}/.github/helper/site_config.json" ~/frappe-bench/sites/test_site/
 
+# The runner's MariaDB client insists on TLS by default, which the mariadb:10.6
+# service container does not offer.
+printf '[client]\nskip-ssl\n' > ~/.my.cnf
 mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
 mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
 
@@ -44,7 +50,7 @@ sed -i 's/schedule:/# schedule:/g' Procfile
 sed -i 's/socketio:/# socketio:/g' Procfile
 sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile
 
-bench get-app "https://github.com/${frappeuser}/erpnext" --branch "$erpnextbranch" --resolve-deps
+bench get-app "$es_erp_repo" --branch "$es_erp_branch"
 bench get-app payments "${GITHUB_WORKSPACE}"
 if [ "$TYPE" == "server" ]; then bench setup requirements --dev; fi
 
